@@ -26,11 +26,11 @@ function GalleryComponent({ notes, onClose }: ModuleProps) {
                 className="gallery-img"
                 loading="lazy"
               />
-              {note.metadata?.caption && (
-                <span className="gallery-caption">
-                  {note.metadata.caption as string}
-                </span>
-              )}
+             {typeof note.metadata?.caption === 'string' && note.metadata.caption && (
+  <span className="gallery-caption">
+    {note.metadata.caption}
+  </span>
+)}
             </div>
           ))}
         </div>

@@ -672,3 +672,173 @@ html, body {
   opacity: 0.35;
   letter-spacing: 0.02em;
 }
+
+/* ─── Todo Module ─── */
+/* Append these rules to globals.css */
+
+.todo-module .module-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.todo-count {
+  font-size: 9px;
+  color: var(--text-dim);
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--border);
+  padding: 1px 6px;
+  border-radius: 20px;
+  text-transform: none;
+}
+
+.todo-input-row {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.todo-input-row:focus-within {
+  border-color: var(--accent-dim);
+}
+
+.todo-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-bright);
+  font-family: var(--font);
+  font-size: 12px;
+  padding: 8px 12px;
+  line-height: 1.5;
+}
+
+.todo-input::placeholder {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.todo-add-btn {
+  background: none;
+  border: none;
+  border-left: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 14px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  font-family: var(--font);
+}
+
+.todo-add-btn:hover:not(:disabled) {
+  color: var(--text-bright);
+  background: var(--surface);
+}
+
+.todo-add-btn:disabled {
+  opacity: 0.2;
+  cursor: default;
+}
+
+.todo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.todo-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 0;
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: var(--radius);
+  transition: background 0.12s;
+}
+
+.todo-item:hover {
+  background: var(--surface);
+}
+
+.todo-check {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.todo-check:hover {
+  border-color: var(--accent);
+}
+
+.todo-check--done {
+  border-color: var(--text-dim);
+  background: var(--border);
+}
+
+.todo-check-inner {
+  display: block;
+  width: 8px;
+  height: 8px;
+}
+
+.todo-check-inner--done {
+  font-size: 9px;
+  color: var(--text-dim);
+  line-height: 1;
+}
+
+.todo-text {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.todo-text--done {
+  color: var(--text-dim);
+  text-decoration: line-through;
+  text-decoration-color: var(--border);
+}
+
+.todo-delete {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 2px;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  line-height: 1;
+}
+
+.todo-item:hover .todo-delete {
+  opacity: 1;
+}
+
+.todo-delete:hover {
+  color: var(--danger);
+}

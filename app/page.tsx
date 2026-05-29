@@ -28,6 +28,7 @@ export default function Home() {
     const unsub = onAuthChange(async (u) => {
       setUser(u)
       setAuthReady(true)
+
       if (u) {
         // Signed in — load from DB
         const dbNotes = await getNotes()
@@ -37,21 +38,39 @@ export default function Home() {
         setNotes(getLocalNotes())
       }
     })
+
     return unsub
   }, [])
+
+  // Escape closes the active module from anywhere
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && activeModule) {
+        setActiveModule(null)
+      }
+    }
+
+    window.addEventListener('keydown', onKey)
+
+    return () => {
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [activeModule])
 
   // Migrate guest notes into DB after sign-in
   const handleMigrateGuest = useCallback(async () => {
     const local = getLocalNotes()
     if (local.length === 0) return
-    // Push each local note to DB (oldest first so feed order is preserved)
+
+    // Push each local note to DB, oldest first so feed order is preserved
     const toMigrate = [...local].reverse()
-    const saved: Note[] = []
+
     for (const n of toMigrate) {
-      const result = await saveNote(n.content, n.type, n.metadata)
-      if (result) saved.push(result)
+      await saveNote(n.content, n.type, n.metadata)
     }
+
     clearLocalNotes()
+
     const dbNotes = await getNotes()
     setNotes(dbNotes)
   }, [])
@@ -61,45 +80,62 @@ export default function Home() {
     if (!trimmed) return
 
     const command = parseCommand(trimmed)
-    if (command.isCommand && command.moduleName) {
-      setActiveModule((prev) =>
-        prev === command.moduleName ? null : command.moduleName!
-      )
-      return
-    }
+if (command.isCommand) {
+  if (command.action === 'home') {
+    setActiveModule(null)
+  } else if (command.moduleName) {
+    setActiveModule((prev) =>
+      prev === command.moduleName ? null : command.moduleName!
+    )
+  }
+  return
+}
 
     setIsLoading(true)
+
     if (user) {
       const saved = await saveNote(trimmed)
-      if (saved) setNotes((prev) => [saved, ...prev])
+      if (saved) {
+        setNotes((prev) => [saved, ...prev])
+      }
     } else {
       const saved = saveLocalNote(trimmed)
       setNotes((prev) => [saved, ...prev])
     }
+
     setIsLoading(false)
   }, [user])
 
   const handleImagePaste = useCallback(async (file: File) => {
     setIsLoading(true)
+
     if (user) {
       const url = await uploadImage(file)
+
       if (url) {
         const saved = await saveNote(url, 'image')
-        if (saved) setNotes((prev) => [saved, ...prev])
+
+        if (saved) {
+          setNotes((prev) => [saved, ...prev])
+        }
       }
     } else {
-      // For guests, store a local object URL (ephemeral — fine for guest mode)
+      // For guests, store a local object URL. This is ephemeral, which is fine for guest mode.
       const url = URL.createObjectURL(file)
       const saved = saveLocalNote(url, 'image')
       setNotes((prev) => [saved, ...prev])
     }
+
     setIsLoading(false)
   }, [user])
 
   const handleDelete = useCallback(async (id: string, note: Note) => {
     if (user) {
       const ok = await deleteNote(id, note)
-      if (ok) setNotes((prev) => prev.filter((n) => n.id !== id))
+
+      if (ok) {
+        setNotes((prev) => prev.filter((n) => n.id !== id))
+      }
     } else {
       deleteLocalNote(id)
       setNotes((prev) => prev.filter((n) => n.id !== id))
@@ -112,16 +148,22 @@ export default function Home() {
     <main className="page">
       <div className="status-bar">
         <AuthPopover user={user} onMigrateGuest={handleMigrateGuest} />
+
         <span className="status-app-name">masternote</span>
+
         {activeModule && (
           <>
             <span>›</span>
             <span className="status-crumb">{activeModule}</span>
           </>
         )}
+
         {isLoading && <span className="status-loading">saving…</span>}
+
         {!user && (
-          <span className="status-guest-hint">notes are local until you sign in</span>
+          <span className="status-guest-hint">
+            notes are local until you sign in
+          </span>
         )}
       </div>
 

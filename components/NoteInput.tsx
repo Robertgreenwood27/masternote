@@ -78,8 +78,8 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: N
   }
 
   const placeholder = activeModule
-    ? `in ${activeModule} — type a note or command...`
-    : 'type a note, url, or command (gallery, journal, links...)'
+  ? `in ${activeModule} — type a note, or /home to exit`
+  : 'type a note… or /journal  /gallery  /links  /todo'
 
   return (
     <div className="note-input-wrapper">

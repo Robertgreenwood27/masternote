@@ -3,7 +3,11 @@
 import { MasterModule, ModuleProps } from '../types'
 import { Note } from '@/types'
 
-function GalleryComponent({ notes, onClose }: ModuleProps) {
+interface GalleryProps extends ModuleProps {
+  onDelete?: (id: string, note: Note) => void
+}
+
+function GalleryComponent({ notes, onClose, onDelete }: GalleryProps) {
   const imageNotes = notes.filter((n) => n.type === 'image')
 
   return (
@@ -12,25 +16,30 @@ function GalleryComponent({ notes, onClose }: ModuleProps) {
         ×
       </button>
       <h2 className="module-title">Gallery</h2>
+
       {imageNotes.length === 0 ? (
         <p className="module-empty">
-          No images yet. Paste an image URL into the input to save it.
+          No images yet. Paste an image into the input to save it.
         </p>
       ) : (
-        <div className="gallery-grid">
+        <div className="masonry-grid">
           {imageNotes.map((note: Note) => (
-            <div key={note.id} className="gallery-item">
+            <div key={note.id} className="masonry-item">
               <img
                 src={note.content}
                 alt={(note.metadata?.caption as string) || 'Saved image'}
-                className="gallery-img"
+                className="masonry-img"
                 loading="lazy"
               />
-             {typeof note.metadata?.caption === 'string' && note.metadata.caption && (
-  <span className="gallery-caption">
-    {note.metadata.caption}
-  </span>
-)}
+              {onDelete && (
+                <button
+                  className="masonry-delete"
+                  onClick={() => onDelete(note.id, note)}
+                  aria-label="Delete image"
+                >
+                  ×
+                </button>
+              )}
             </div>
           ))}
         </div>

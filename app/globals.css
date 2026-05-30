@@ -1381,3 +1381,188 @@ html, body {
     display: flex;
   }
 }
+
+/* ─── Masonry Gallery ─── */
+
+.masonry-grid {
+  columns: 3 180px;
+  column-gap: 6px;
+}
+
+.masonry-item {
+  position: relative;
+  break-inside: avoid;
+  margin-bottom: 6px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--border);
+  cursor: default;
+}
+
+.masonry-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  filter: grayscale(10%);
+  transition: filter 0.25s ease, transform 0.25s ease;
+}
+
+.masonry-item:hover .masonry-img {
+  filter: grayscale(0%);
+  transform: scale(1.01);
+}
+
+.masonry-delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  color: #bbb;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+
+.masonry-item:hover .masonry-delete {
+  opacity: 1;
+}
+
+.masonry-delete:hover {
+  color: #fff;
+  background: rgba(139, 58, 58, 0.85);
+  border-color: rgba(255, 100, 100, 0.3);
+}
+
+.masonry-caption {
+  display: block;
+  font-size: 10px;
+  color: var(--text-dim);
+  padding: 4px 6px;
+  background: var(--surface);
+}
+
+.module-view--full {
+  flex: 1;
+  overflow: hidden;
+}
+
+.module-view--full .module-surface {
+  height: 100%;
+}
+
+
+.module-view--full .module-surface {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.module-view--full .masonry-grid {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ─── Gallery full-height layout ─── */
+
+.module-view--full {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.module-view--full .module-surface {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.module-view--full .module-title {
+  padding: 1rem 2rem 0.75rem;
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.module-view--full .module-close {
+  top: 1rem;
+}
+
+/* ─── Masonry Grid ─── */
+
+.masonry-grid {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 200px;
+  grid-auto-flow: dense;
+  gap: 4px;
+  padding: 0 4px 4px;
+  align-content: start;
+}
+
+.masonry-item {
+  position: relative;
+  overflow: hidden;
+  background: var(--border);
+}
+
+/* Every 3rd item spans 2 rows for the staggered look */
+.masonry-item:nth-child(3n + 1) {
+  grid-row: span 2;
+}
+
+.masonry-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: grayscale(10%);
+  transition: filter 0.25s ease, transform 0.3s ease;
+}
+
+.masonry-item:hover .masonry-img {
+  filter: grayscale(0%);
+  transform: scale(1.03);
+}
+
+.masonry-delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  color: #bbb;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+
+.masonry-item:hover .masonry-delete {
+  opacity: 1;
+}
+
+.masonry-delete:hover {
+  color: #fff;
+  background: rgba(139, 58, 58, 0.85);
+  border-color: rgba(255, 100, 100, 0.3);
+}
+

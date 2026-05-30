@@ -909,3 +909,71 @@ html, body {
   /* override browser default */
   font-style: normal;
 }
+
+/* ─── Mobile Input Bar ─── */
+
+.note-input-container--mobile {
+  /* keep items from squishing */
+  min-height: 52px;
+}
+
+/* + button (add image / camera) */
+.note-media-btn {
+  flex-shrink: 0;
+  align-self: stretch;
+  background: none;
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 22px;
+  line-height: 1;
+  padding: 0 1rem;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.note-media-btn:hover:not(:disabled),
+.note-media-btn:active:not(:disabled) {
+  color: var(--text-bright);
+  background: var(--surface);
+}
+
+.note-media-btn:disabled {
+  opacity: 0.2;
+}
+
+/* Submit button — always visible + slightly larger tap target on mobile */
+.note-submit--mobile {
+  opacity: 1 !important;        /* override any hover-only visibility */
+  min-width: 52px;
+  font-size: 18px;
+  color: var(--text-dim);
+}
+
+/* Ensure textarea doesn't shrink below a readable width on very narrow screens */
+@media (max-width: 480px) {
+  .note-input {
+    font-size: 16px; /* prevents iOS zoom-on-focus */
+    padding: 0.85rem 0.75rem;
+  }
+
+  .note-media-btn {
+    padding: 0 0.75rem;
+  }
+
+  .note-submit--mobile {
+    min-width: 46px;
+    padding: 0 0.75rem;
+  }
+
+  .status-bar {
+    font-size: 9px;
+    gap: 0.5rem;
+    padding: 4px 0.75rem;
+  }
+
+  .module-surface {
+    padding: 1.25rem 1rem;
+  }
+}

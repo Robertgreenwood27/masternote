@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, KeyboardEvent, ClipboardEvent } from 'react'
+import { useState, useRef, useEffect, KeyboardEvent, ClipboardEvent } from 'react'
 
 interface NoteInputProps {
   onSubmit: (value: string) => void
@@ -13,46 +13,33 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: N
   const [value, setValue] = useState('')
   const [pastePreview, setPastePreview] = useState<string | null>(null)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // A value is submittable if it's a non-empty string OR it's a slash-command (starts with /)
-  const isCommand = value.trim() === '*' || value.trimStart().startsWith('/')
-  const canSubmit = !isLoading && (value.trim().length > 0 || isCommand)
-
-  const submit = () => {
-    if (pendingFile && onImagePaste) {
-      onImagePaste(pendingFile)
-      setPendingFile(null)
-      setPastePreview(null)
-      return
-    }
-
-    if (canSubmit) {
-      onSubmit(value.trimStart().startsWith('/') ? value.trim() : value)
-      setValue('')
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto'
-        textareaRef.current.focus()
-      }
-    }
-  }
+  // Detect mobile on mount + resize
+  useEffect(() => {
+    const check = () => setIsMobile(window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-
-      // If there's a pending pasted image, upload it
       if (pendingFile && onImagePaste) {
         onImagePaste(pendingFile)
         setPendingFile(null)
         setPastePreview(null)
         return
       }
-
-      submit()
+      if (value.trim() && !isLoading) {
+        onSubmit(value)
+        setValue('')
+        if (textareaRef.current) textareaRef.current.style.height = 'auto'
+      }
     }
-
-    // Escape clears a pending image paste
     if (e.key === 'Escape' && pendingFile) {
       setPendingFile(null)
       setPastePreview(null)
@@ -69,22 +56,40 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: N
   const handlePaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
     const items = Array.from(e.clipboardData.items)
     const imageItem = items.find((item) => item.type.startsWith('image/'))
-
     if (imageItem) {
       e.preventDefault()
       const file = imageItem.getAsFile()
       if (!file) return
-
       setPendingFile(file)
-
-      // Show a local preview
       const reader = new FileReader()
-      reader.onload = (ev) => {
-        setPastePreview(ev.target?.result as string)
-      }
+      reader.onload = (ev) => setPastePreview(ev.target?.result as string)
       reader.readAsDataURL(file)
     }
-    // Otherwise let normal text paste through
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPendingFile(file)
+    const reader = new FileReader()
+    reader.onload = (ev) => setPastePreview(ev.target?.result as string)
+    reader.readAsDataURL(file)
+    // Reset so the same file can be picked again
+    e.target.value = ''
+  }
+
+  const handleSubmit = () => {
+    if (pendingFile && onImagePaste) {
+      onImagePaste(pendingFile)
+      setPendingFile(null)
+      setPastePreview(null)
+      return
+    }
+    if (value.trim() && !isLoading) {
+      onSubmit(value)
+      setValue('')
+      if (textareaRef.current) textareaRef.current.style.height = 'auto'
+    }
   }
 
   const cancelPaste = () => {
@@ -95,24 +100,45 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: N
 
   const placeholder = activeModule
     ? `in ${activeModule} — type a note, or /home to exit`
-    : 'type a note… or /journal  /gallery  /links  /todo  *'
+    : 'type a note… or /journal  /gallery  /links  /todo'
+
+  const canSubmit = (!!value.trim() || !!pendingFile) && !isLoading
 
   return (
     <div className="note-input-wrapper">
-      {/* Image paste preview */}
       {pastePreview && (
         <div className="paste-preview">
           <img src={pastePreview} alt="paste preview" className="paste-preview-img" />
           <div className="paste-preview-actions">
             <span className="paste-preview-hint">press ↵ to save image</span>
-            <button className="paste-cancel" onClick={cancelPaste}>
-              cancel (esc)
-            </button>
+            <button className="paste-cancel" onClick={cancelPaste}>cancel (esc)</button>
           </div>
         </div>
       )}
 
-      <div className="note-input-container">
+      {/* Hidden file input — accepts images, opens camera on mobile */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
+      />
+
+      <div className={`note-input-container${isMobile ? ' note-input-container--mobile' : ''}`}>
+        {/* Mobile-only: add image / camera button */}
+        {isMobile && (
+          <button
+            className="note-media-btn"
+            onClick={() => fileInputRef.current?.click()}
+            aria-label="Add image or take photo"
+            disabled={!!isLoading}
+          >
+            +
+          </button>
+        )}
+
         <textarea
           ref={textareaRef}
           className="note-input"
@@ -123,12 +149,14 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: N
           placeholder={pendingFile ? '' : placeholder}
           disabled={isLoading}
           rows={1}
-          autoFocus
+          autoFocus={!isMobile}
         />
+
+        {/* Submit button — always visible on mobile, hover-only on desktop */}
         <button
-          className="note-submit"
-          onClick={submit}
-          disabled={!canSubmit && !pendingFile}
+          className={`note-submit${isMobile ? ' note-submit--mobile' : ''}`}
+          onClick={handleSubmit}
+          disabled={!canSubmit}
           aria-label="Submit"
         >
           {isLoading ? '…' : '↵'}

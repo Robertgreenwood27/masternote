@@ -1327,3 +1327,34 @@ html, body {
     display: flex;
   }
 }
+
+/* ─── Mobile palette overrides ─── */
+/* Append these to globals.css after the existing cmd-palette rules */
+
+/* Larger tap targets on mobile */
+.cmd-item--mobile {
+  padding: 12px 10px;
+  min-height: 48px;
+}
+
+/* Full-width flush to screen edges on mobile */
+.cmd-palette--mobile {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: 1px solid #2e2e2e;
+  border-bottom: none;
+  box-shadow:
+    0 -8px 24px rgba(0, 0, 0, 0.5),
+    0 -2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Slightly taller group label so it's easy to scan on mobile */
+.cmd-palette--mobile .cmd-group-label {
+  padding: 8px 12px 4px;
+}
+
+/* Bigger icon on mobile */
+.cmd-palette--mobile .cmd-icon {
+  font-size: 16px;
+}

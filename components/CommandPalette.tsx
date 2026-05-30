@@ -8,6 +8,8 @@ interface CommandPaletteProps {
   selectedIndex: number
   onSelect: (cmd: PaletteCommand) => void
   onChangeIndex: (index: number) => void
+  isMobile?: boolean
+  bottomOffset?: number  // pixels from bottom of viewport (mobile only)
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -22,11 +24,12 @@ export function CommandPalette({
   selectedIndex,
   onSelect,
   onChangeIndex,
+  isMobile = false,
+  bottomOffset = 0,
 }: CommandPaletteProps) {
   const listRef = useRef<HTMLDivElement>(null)
   const commands = filterCommands(query)
 
-  // Keep selected item scrolled into view
   useEffect(() => {
     const el = listRef.current?.querySelector(
       `[data-index="${selectedIndex}"]`
@@ -36,7 +39,7 @@ export function CommandPalette({
 
   if (commands.length === 0) return null
 
-  // Group by category, preserving ranked order within each group
+  // Group by category
   const grouped: { category: string; items: (PaletteCommand & { rank: number })[] }[] = []
   const seen = new Set<string>()
 
@@ -48,8 +51,26 @@ export function CommandPalette({
     grouped.find((g) => g.category === cmd.category)!.items.push({ ...cmd, rank })
   })
 
+  // Mobile: fixed positioning anchored just above the keyboard
+  const mobileStyle: React.CSSProperties = isMobile ? {
+    position: 'fixed',
+    left: 0,
+    right: 0,
+    bottom: bottomOffset,
+    zIndex: 200,
+    borderRadius: 0,
+    borderLeft: 'none',
+    borderRight: 'none',
+    maxHeight: '45vh',
+  } : {}
+
   return (
-    <div className="cmd-palette" role="listbox" aria-label="Command palette">
+    <div
+      className={`cmd-palette${isMobile ? ' cmd-palette--mobile' : ''}`}
+      style={mobileStyle}
+      role="listbox"
+      aria-label="Command palette"
+    >
       <div className="cmd-palette-inner" ref={listRef}>
         {grouped.map(({ category, items }) => (
           <div key={category} className="cmd-group">
@@ -62,9 +83,13 @@ export function CommandPalette({
                 data-index={cmd.rank}
                 role="option"
                 aria-selected={cmd.rank === selectedIndex}
-                className={`cmd-item ${cmd.rank === selectedIndex ? 'cmd-item--active' : ''}`}
-                onMouseEnter={() => onChangeIndex(cmd.rank)}
-                onClick={() => onSelect(cmd)}
+                className={`cmd-item${cmd.rank === selectedIndex ? ' cmd-item--active' : ''}${isMobile ? ' cmd-item--mobile' : ''}`}
+                onMouseEnter={() => !isMobile && onChangeIndex(cmd.rank)}
+                // Use onPointerDown instead of onClick to fire before blur steals focus
+                onPointerDown={(e) => {
+                  e.preventDefault() // prevent textarea blur
+                  onSelect(cmd)
+                }}
               >
                 <span className="cmd-icon">{cmd.icon}</span>
                 <span className="cmd-label">{cmd.label}</span>
@@ -74,10 +99,18 @@ export function CommandPalette({
           </div>
         ))}
       </div>
+
+      {/* Footer: keyboard hints on desktop, tap hint on mobile */}
       <div className="cmd-palette-footer">
-        <span>↑↓ navigate</span>
-        <span>↵ select</span>
-        <span>esc dismiss</span>
+        {isMobile ? (
+          <span>tap to select</span>
+        ) : (
+          <>
+            <span>↑↓ navigate</span>
+            <span>↵ select</span>
+            <span>esc dismiss</span>
+          </>
+        )}
       </div>
     </div>
   )

@@ -33,6 +33,19 @@ export function parseCommand(input: string): ParsedCommand {
     return { isCommand: true, action: 'home', rawInput: trimmed }
   }
 
+  // /open <handle> → open a saved link by handle
+  if (word === 'open') {
+    const parts = trimmed.slice(1).trim().split(/\s+/)
+    const handle = parts[1]?.toLowerCase() ?? ''
+
+    return {
+      isCommand: true,
+      action: 'open',
+      actionArg: handle,
+      rawInput: trimmed,
+    }
+  }
+
   // /all → show everything
   if (word === 'all' || word === 'al') {
     return { isCommand: true, moduleName: 'all', rawInput: trimmed }
@@ -40,8 +53,13 @@ export function parseCommand(input: string): ParsedCommand {
 
   // /journal /gallery /links /todo (or shorthand) → open that module
   const matchedModule = MODULES.find((m) => matchesKeyword(word, m.keywords))
+
   if (matchedModule) {
-    return { isCommand: true, moduleName: matchedModule.name, rawInput: trimmed }
+    return {
+      isCommand: true,
+      moduleName: matchedModule.name,
+      rawInput: trimmed,
+    }
   }
 
   // Unrecognized "/..." → treat as a normal note

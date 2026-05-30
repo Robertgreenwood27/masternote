@@ -1,48 +1,107 @@
 'use client'
 
 import { useState, useRef, useEffect, KeyboardEvent, ClipboardEvent } from 'react'
+import { Note } from '@/types'
 
 interface NoteInputProps {
   onSubmit: (value: string) => void
   onImagePaste?: (file: File) => void
   isLoading?: boolean
   activeModule?: string | null
+  notes?: Note[]
 }
 
-export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: NoteInputProps) {
+export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule, notes = [] }: NoteInputProps) {
   const [value, setValue] = useState('')
   const [pastePreview, setPastePreview] = useState<string | null>(null)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
-  const [isMobile, setIsMobile] = useState(false)
+  const [selectedSuggestion, setSelectedSuggestion] = useState(0)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Detect mobile on mount + resize
+  // ── /open autocomplete ──────────────────────────────────────────────
+  const openMatch = value.match(/^\/open\s+(\S*)$/i)
+  const openQuery = openMatch ? openMatch[1].toLowerCase() : null
+
+  const handleSuggestions: { handle: string; url: string }[] = openQuery !== null
+    ? notes
+        .filter(
+          (n) =>
+            n.type === 'link' &&
+            typeof n.metadata?.handle === 'string' &&
+            (n.metadata.handle as string).startsWith(openQuery)
+        )
+        .map((n) => ({ handle: n.metadata!.handle as string, url: n.content }))
+    : []
+
+  // Reset selected index when suggestions change
   useEffect(() => {
-    const check = () => setIsMobile(window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768)
-    check()
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
-  }, [])
+    setSelectedSuggestion(0)
+  }, [handleSuggestions.length, openQuery])
+
+  const applySuggestion = (handle: string) => {
+    setValue(`/open ${handle}`)
+    textareaRef.current?.focus()
+    // Auto-submit immediately
+    onSubmit(`/open ${handle}`)
+    setValue('')
+  }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Navigate suggestions with arrow keys
+    if (handleSuggestions.length > 0) {
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setSelectedSuggestion((i) => (i <= 0 ? handleSuggestions.length - 1 : i - 1))
+        return
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setSelectedSuggestion((i) => (i >= handleSuggestions.length - 1 ? 0 : i + 1))
+        return
+      }
+      if (e.key === 'Tab') {
+        e.preventDefault()
+        applySuggestion(handleSuggestions[selectedSuggestion].handle)
+        return
+      }
+    }
+
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
+
+      // If suggestions open and user presses Enter, pick the highlighted one
+      if (handleSuggestions.length > 0) {
+        applySuggestion(handleSuggestions[selectedSuggestion].handle)
+        return
+      }
+
+      // If there's a pending pasted image, upload it
       if (pendingFile && onImagePaste) {
         onImagePaste(pendingFile)
         setPendingFile(null)
         setPastePreview(null)
         return
       }
+
       if (value.trim() && !isLoading) {
         onSubmit(value)
         setValue('')
-        if (textareaRef.current) textareaRef.current.style.height = 'auto'
+        if (textareaRef.current) {
+          textareaRef.current.style.height = 'auto'
+        }
       }
     }
-    if (e.key === 'Escape' && pendingFile) {
-      setPendingFile(null)
-      setPastePreview(null)
+
+    // Escape clears suggestions or pending image paste
+    if (e.key === 'Escape') {
+      if (handleSuggestions.length > 0) {
+        setValue('')
+        return
+      }
+      if (pendingFile) {
+        setPendingFile(null)
+        setPastePreview(null)
+      }
     }
   }
 
@@ -56,39 +115,19 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: N
   const handlePaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
     const items = Array.from(e.clipboardData.items)
     const imageItem = items.find((item) => item.type.startsWith('image/'))
+
     if (imageItem) {
       e.preventDefault()
       const file = imageItem.getAsFile()
       if (!file) return
+
       setPendingFile(file)
+
       const reader = new FileReader()
-      reader.onload = (ev) => setPastePreview(ev.target?.result as string)
+      reader.onload = (ev) => {
+        setPastePreview(ev.target?.result as string)
+      }
       reader.readAsDataURL(file)
-    }
-  }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setPendingFile(file)
-    const reader = new FileReader()
-    reader.onload = (ev) => setPastePreview(ev.target?.result as string)
-    reader.readAsDataURL(file)
-    // Reset so the same file can be picked again
-    e.target.value = ''
-  }
-
-  const handleSubmit = () => {
-    if (pendingFile && onImagePaste) {
-      onImagePaste(pendingFile)
-      setPendingFile(null)
-      setPastePreview(null)
-      return
-    }
-    if (value.trim() && !isLoading) {
-      onSubmit(value)
-      setValue('')
-      if (textareaRef.current) textareaRef.current.style.height = 'auto'
     }
   }
 
@@ -102,42 +141,43 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: N
     ? `in ${activeModule} — type a note, or /home to exit`
     : 'type a note… or /journal  /gallery  /links  /todo'
 
-  const canSubmit = (!!value.trim() || !!pendingFile) && !isLoading
-
   return (
     <div className="note-input-wrapper">
+      {/* /open suggestions */}
+      {handleSuggestions.length > 0 && (
+        <div className="open-suggestions">
+          {handleSuggestions.map((s, i) => (
+            <button
+              key={s.handle}
+              className={`open-suggestion-item${i === selectedSuggestion ? ' open-suggestion-item--active' : ''}`}
+              onMouseDown={(e) => {
+                e.preventDefault() // don't blur textarea
+                applySuggestion(s.handle)
+              }}
+              onMouseEnter={() => setSelectedSuggestion(i)}
+            >
+              <span className="open-suggestion-handle">/{s.handle}</span>
+              <span className="open-suggestion-url">{s.url}</span>
+            </button>
+          ))}
+          <div className="open-suggestions-hint">↑↓ navigate · ↵ or tab to open</div>
+        </div>
+      )}
+
+      {/* Image paste preview */}
       {pastePreview && (
         <div className="paste-preview">
           <img src={pastePreview} alt="paste preview" className="paste-preview-img" />
           <div className="paste-preview-actions">
             <span className="paste-preview-hint">press ↵ to save image</span>
-            <button className="paste-cancel" onClick={cancelPaste}>cancel (esc)</button>
+            <button className="paste-cancel" onClick={cancelPaste}>
+              cancel (esc)
+            </button>
           </div>
         </div>
       )}
 
-      {/* Hidden file input — accepts images, opens camera on mobile */}
-      <input
-  ref={fileInputRef}
-  type="file"
-  accept="image/*"
-  style={{ display: 'none' }}
-  onChange={handleFileChange}
-/>
-
-      <div className={`note-input-container${isMobile ? ' note-input-container--mobile' : ''}`}>
-        {/* Mobile-only: add image / camera button */}
-        {isMobile && (
-          <button
-            className="note-media-btn"
-            onClick={() => fileInputRef.current?.click()}
-            aria-label="Add image or take photo"
-            disabled={!!isLoading}
-          >
-            +
-          </button>
-        )}
-
+      <div className="note-input-container">
         <textarea
           ref={textareaRef}
           className="note-input"
@@ -148,14 +188,27 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: N
           placeholder={pendingFile ? '' : placeholder}
           disabled={isLoading}
           rows={1}
-          autoFocus={!isMobile}
+          autoFocus
         />
-
-        {/* Submit button — always visible on mobile, hover-only on desktop */}
         <button
-          className={`note-submit${isMobile ? ' note-submit--mobile' : ''}`}
-          onClick={handleSubmit}
-          disabled={!canSubmit}
+          className="note-submit"
+          onClick={() => {
+            if (handleSuggestions.length > 0) {
+              applySuggestion(handleSuggestions[selectedSuggestion].handle)
+              return
+            }
+            if (pendingFile && onImagePaste) {
+              onImagePaste(pendingFile)
+              setPendingFile(null)
+              setPastePreview(null)
+              return
+            }
+            if (value.trim() && !isLoading) {
+              onSubmit(value)
+              setValue('')
+            }
+          }}
+          disabled={(!value.trim() && !pendingFile) || !!isLoading}
           aria-label="Submit"
         >
           {isLoading ? '…' : '↵'}

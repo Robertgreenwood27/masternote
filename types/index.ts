@@ -1,4 +1,4 @@
-export type NoteType = 'journal' | 'image' | 'link'
+export type NoteType = 'text' | 'journal' | 'image' | 'link'
 
 export interface Note {
   id: string
@@ -11,8 +11,8 @@ export interface Note {
 export interface ParsedCommand {
   isCommand: boolean
   moduleName?: string
-  action?: 'home'
+  action?: 'home' | 'open'
+  actionArg?: string          // ← the handle after /open
   rawInput: string
-  // If it's not a command, this is what gets saved as a note
   noteContent?: string
 }

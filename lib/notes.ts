@@ -1,8 +1,12 @@
 import { supabase } from './supabase'
 import { Note, NoteType } from '@/types'
+import { parseLinkWithHandle } from './parseLink'
+
+export { parseLinkWithHandle } from './parseLink'
 
 export function detectNoteType(input: string): NoteType {
-  const trimmed = input.trim()
+  // Strip any "as <handle>" suffix before checking the URL
+  const { url: trimmed } = parseLinkWithHandle(input.trim())
 
   try {
     const url = new URL(trimmed)
@@ -15,8 +19,11 @@ export function detectNoteType(input: string): NoteType {
     // not a URL
   }
 
-  // Everything that isn't a URL or image is a journal entry
-  return 'journal'
+  if (trimmed.includes('\n') || trimmed.length > 280) {
+    return 'journal'
+  }
+
+  return 'text'
 }
 
 export async function uploadImage(file: File): Promise<string | null> {
@@ -36,10 +43,6 @@ export async function uploadImage(file: File): Promise<string | null> {
   return data.publicUrl
 }
 
-/**
- * Extract the storage filename from a Supabase public URL.
- * e.g. https://xxx.supabase.co/storage/v1/object/public/images/filename.png → filename.png
- */
 function extractStorageFilename(url: string): string | null {
   try {
     const path = new URL(url).pathname
@@ -88,7 +91,6 @@ export async function getNotes(): Promise<Note[]> {
 }
 
 export async function deleteNote(id: string, note?: Note): Promise<boolean> {
-  // If it's an image stored in our bucket, clean up the file too
   if (note?.type === 'image') {
     const filename = extractStorageFilename(note.content)
     if (filename) {
@@ -97,7 +99,6 @@ export async function deleteNote(id: string, note?: Note): Promise<boolean> {
         .remove([filename])
       if (storageError) {
         console.error('Error deleting image from storage:', storageError)
-        // Don't block note deletion if storage cleanup fails
       }
     }
   }

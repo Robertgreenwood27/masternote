@@ -11,7 +11,9 @@ function LinksComponent({ notes, onClose }: ModuleProps) {
       <button className="module-close" onClick={onClose} aria-label="Close">
         ×
       </button>
+
       <h2 className="module-title">Links</h2>
+
       {linkNotes.length === 0 ? (
         <p className="module-empty">
           No links saved yet. Paste a URL into the input to bookmark it.
@@ -29,7 +31,15 @@ function LinksComponent({ notes, onClose }: ModuleProps) {
               <span className="link-domain">
                 {new URL(note.content).hostname}
               </span>
+
+              {note.metadata?.handle && (
+                <span className="link-handle">
+                  /{note.metadata.handle as string}
+                </span>
+              )}
+
               <span className="link-url">{note.content}</span>
+
               <span className="link-date">
                 {new Date(note.created_at).toLocaleDateString()}
               </span>

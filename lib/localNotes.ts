@@ -7,12 +7,16 @@ export function getLocalNotes(): Note[] {
   if (typeof window === 'undefined') return []
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    const notes: Note[] = raw ? JSON.parse(raw) : []
-    // Migrate any legacy 'text' notes to 'journal'
-    return notes.map((n) => ({
-      ...n,
-      type: (n.type === 'text' ? 'journal' : n.type) as NoteType,
-    }))
+    if (!raw) return []
+    const parsed: unknown[] = JSON.parse(raw)
+    return parsed.map((n) => {
+      const item = n as Record<string, unknown>
+      const type = (item.type as string) === 'text' ? 'journal' : (item.type as string)
+      return {
+        ...item,
+        type: type as NoteType,
+      } as Note
+    })
   } catch {
     return []
   }

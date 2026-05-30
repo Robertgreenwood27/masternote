@@ -161,13 +161,13 @@ export default function Home() {
   activeModule={activeModule}
   notes={notes}
   onClose={() => setActiveModule(null)}
-  onDelete={handleDelete}   // ← add this
+  onDelete={handleDelete}
 />
       )}
 
-      <div className="feed-area">
-        <NotesFeed notes={notes} onDelete={handleDelete} activeModule={activeModule} />
-      </div>
+      <div className="feed-area" style={activeModule ? { display: 'none' } : undefined}>
+  <NotesFeed notes={notes} onDelete={handleDelete} />
+</div>
 
       <div className="input-area">
         <NoteInput

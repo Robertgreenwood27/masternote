@@ -10,6 +10,7 @@ interface ModuleViewProps {
   onDelete?: (id: string, note: Note) => void
 }
 
+
 const FULL_HEIGHT_MODULES = ['gallery']
 
 export function ModuleView({ activeModule, notes, onClose, onDelete }: ModuleViewProps) {
@@ -18,10 +19,8 @@ export function ModuleView({ activeModule, notes, onClose, onDelete }: ModuleVie
   if (!mod) return null
   const { Component } = mod
 
-  const isFull = FULL_HEIGHT_MODULES.includes(activeModule)
-
   return (
-    <div className={`module-view ${isFull ? 'module-view--full' : ''}`}>
+    <div className="module-view">
       <Component notes={notes} onClose={onClose} isActive={true} onDelete={onDelete} />
     </div>
   )

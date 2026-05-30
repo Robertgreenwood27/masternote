@@ -1,55 +1,186 @@
 'use client'
 
-import { useState, useRef, KeyboardEvent, ClipboardEvent } from 'react'
+import { useState, useRef, useEffect, KeyboardEvent, ClipboardEvent, useCallback } from 'react'
+import { CommandPalette } from './CommandPalette'
+import { PaletteCommand, filterCommands } from './CommandRegistry'
 
 interface NoteInputProps {
   onSubmit: (value: string) => void
   onImagePaste?: (file: File) => void
+  onCommand?: (cmd: PaletteCommand) => void
   isLoading?: boolean
   activeModule?: string | null
 }
 
-export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: NoteInputProps) {
+export function NoteInput({
+  onSubmit,
+  onImagePaste,
+  onCommand,
+  isLoading,
+  activeModule,
+}: NoteInputProps) {
   const [value, setValue] = useState('')
-  const [focused, setFocused] = useState(false)
   const [pastePreview, setPastePreview] = useState<string | null>(null)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Palette state
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  const [paletteQuery, setPaletteQuery] = useState('')
+  const [paletteIndex, setPaletteIndex] = useState(0)
+
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const charCount = value.length
-  const charClass = charCount > 240 ? 'danger' : charCount > 180 ? 'warn' : ''
+  // Mobile detection
+  useEffect(() => {
+    const check = () =>
+      setIsMobile(
+        window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768
+      )
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
+  // ── Palette helpers ──────────────────────────────────────────────
 
-      if (pendingFile && onImagePaste) {
-        onImagePaste(pendingFile)
-        setPendingFile(null)
-        setPastePreview(null)
-        return
+  const openPalette = useCallback((query: string) => {
+    setPaletteOpen(true)
+    setPaletteQuery(query)
+    setPaletteIndex(0)
+  }, [])
+
+  const closePalette = useCallback(() => {
+    setPaletteOpen(false)
+    setPaletteQuery('')
+    setPaletteIndex(0)
+  }, [])
+
+  const selectCommand = useCallback(
+    (cmd: PaletteCommand) => {
+      closePalette()
+      setValue('')
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto'
+        textareaRef.current.focus()
       }
+      onCommand?.(cmd)
+    },
+    [closePalette, onCommand]
+  )
 
-      if (value.trim() && !isLoading) {
-        onSubmit(value)
-        setValue('')
-        if (textareaRef.current) textareaRef.current.style.height = 'auto'
+  // ── Main submit ──────────────────────────────────────────────────
+
+  const submit = useCallback(() => {
+    // Image pending
+    if (pendingFile && onImagePaste) {
+      onImagePaste(pendingFile)
+      setPendingFile(null)
+      setPastePreview(null)
+      return
+    }
+
+    const trimmed = value.trim()
+    if (!trimmed || isLoading) return
+
+    // If palette is open, select the highlighted item instead of submitting text
+    if (paletteOpen) {
+      const matches = filterCommands(paletteQuery)
+      const cmd = matches[paletteIndex]
+      if (cmd) {
+        selectCommand(cmd)
+        return
       }
     }
 
+    onSubmit(trimmed)
+    setValue('')
+    closePalette()
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.focus()
+    }
+  }, [
+    pendingFile,
+    onImagePaste,
+    value,
+    isLoading,
+    paletteOpen,
+    paletteQuery,
+    paletteIndex,
+    selectCommand,
+    onSubmit,
+    closePalette,
+  ])
+
+  // ── Keyboard handler ─────────────────────────────────────────────
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Palette navigation
+    if (paletteOpen) {
+      const matches = filterCommands(paletteQuery)
+      const max = matches.length
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setPaletteIndex((i) => (i + 1) % max)
+        return
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setPaletteIndex((i) => (i - 1 + max) % max)
+        return
+      }
+      if (e.key === 'Tab') {
+        e.preventDefault()
+        // Tab cycles forward
+        setPaletteIndex((i) => (i + 1) % max)
+        return
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        closePalette()
+        setValue('')
+        return
+      }
+    }
+
+    // Escape clears pending image paste
     if (e.key === 'Escape' && pendingFile) {
       setPendingFile(null)
       setPastePreview(null)
+      return
+    }
+
+    // Enter submits
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      submit()
     }
   }
 
+  // ── Input change — drives palette ────────────────────────────────
+
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setValue(e.target.value)
+    const v = e.target.value
+    setValue(v)
+
+    // Auto-resize
     const el = e.target
     el.style.height = 'auto'
     el.style.height = `${el.scrollHeight}px`
+
+    // Open/update palette when input starts with "/"
+    if (v.startsWith('/')) {
+      const query = v.slice(1) // everything after "/"
+      openPalette(query)
+    } else {
+      if (paletteOpen) closePalette()
+    }
   }
+
+  // ── Image paste ──────────────────────────────────────────────────
 
   const handlePaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
     const items = Array.from(e.clipboardData.items)
@@ -59,23 +190,21 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: N
       e.preventDefault()
       const file = imageItem.getAsFile()
       if (!file) return
-      stagePendingFile(file)
+      setPendingFile(file)
+
+      const reader = new FileReader()
+      reader.onload = (ev) => setPastePreview(ev.target?.result as string)
+      reader.readAsDataURL(file)
     }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    stagePendingFile(file)
-    // reset so the same file can be re-selected if cancelled
+    if (onImagePaste) {
+      onImagePaste(file)
+    }
     e.target.value = ''
-  }
-
-  const stagePendingFile = (file: File) => {
-    setPendingFile(file)
-    const reader = new FileReader()
-    reader.onload = (ev) => setPastePreview(ev.target?.result as string)
-    reader.readAsDataURL(file)
   }
 
   const cancelPaste = () => {
@@ -84,26 +213,25 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: N
     textareaRef.current?.focus()
   }
 
-  const handleSubmit = () => {
-    if (pendingFile && onImagePaste) {
-      onImagePaste(pendingFile)
-      setPendingFile(null)
-      setPastePreview(null)
-      return
-    }
-    if (value.trim() && !isLoading) {
-      onSubmit(value)
-      setValue('')
-      if (textareaRef.current) textareaRef.current.style.height = 'auto'
-    }
-  }
+  const canSubmit = (!!value.trim() || !!pendingFile) && !isLoading
 
   const placeholder = activeModule
     ? `in ${activeModule} — type a note, or /home to exit`
-    : 'type a note… or /journal  /gallery  /links  /todo'
+    : 'type a note… or / for commands'
 
   return (
     <div className="note-input-wrapper">
+      {/* Command palette — rises above the input bar */}
+      {paletteOpen && (
+        <CommandPalette
+          query={paletteQuery}
+          selectedIndex={paletteIndex}
+          onSelect={selectCommand}
+          onChangeIndex={setPaletteIndex}
+        />
+      )}
+
+      {/* Image paste preview */}
       {pastePreview && (
         <div className="paste-preview">
           <img src={pastePreview} alt="paste preview" className="paste-preview-img" />
@@ -116,17 +244,17 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: N
         </div>
       )}
 
-      <div className={`note-input-container${focused ? ' focused' : ''}`}>
-        {/* Hidden file input — triggered by the + button */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          style={{ display: 'none' }}
-          onChange={handleFileChange}
-        />
+      {/* Hidden file input for mobile image picker */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
+      />
 
-        {/* + button — visible on mobile, hidden on desktop */}
+      <div className="note-input-container">
+        {/* Mobile image attach button */}
         {onImagePaste && (
           <button
             className="note-attach"
@@ -145,34 +273,20 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: N
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
           placeholder={pendingFile ? '' : placeholder}
           disabled={isLoading}
           rows={1}
-          autoFocus
+          autoFocus={!isMobile}
         />
+
         <button
           className="note-submit"
-          onClick={handleSubmit}
-          disabled={(!value.trim() && !pendingFile) || !!isLoading}
+          onClick={submit}
+          disabled={!canSubmit}
           aria-label="Submit"
         >
           {isLoading ? '…' : '↵'}
         </button>
-      </div>
-
-      <div className="input-meta-row">
-        <div className="input-shortcuts">
-          <span className="input-shortcut"><kbd>↵</kbd> save</span>
-          <span className="input-shortcut"><kbd>shift ↵</kbd> newline</span>
-          <span className="input-shortcut"><kbd>esc</kbd> home</span>
-        </div>
-        {value.length > 0 && (
-          <span className={`input-char-count${charClass ? ` ${charClass}` : ''}`}>
-            {charCount}
-          </span>
-        )}
       </div>
     </div>
   )

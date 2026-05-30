@@ -4,17 +4,17 @@ import { useEffect, useRef } from 'react'
 import { PaletteCommand, filterCommands } from './CommandRegistry'
 
 interface CommandPaletteProps {
-  query: string                          // text after the "/" 
+  query: string
   selectedIndex: number
   onSelect: (cmd: PaletteCommand) => void
   onChangeIndex: (index: number) => void
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  module: 'modules',
-  type:   'save as',
-  action: 'actions',
-  filter: 'filter',
+  module:  'modules',
+  type:    'save as',
+  action:  'actions',
+  filter:  'filter',
 }
 
 export function CommandPalette({

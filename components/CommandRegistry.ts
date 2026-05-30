@@ -1,100 +1,91 @@
-// ─── Command Registry ───────────────────────────────────────────────
-// Every entry the / palette can show. Add new commands here; the
-// palette and parser pick them up automatically.
-
-export type CommandCategory = 'module' | 'type' | 'action' | 'filter'
-
 export interface PaletteCommand {
   id: string
   label: string
   hint: string
-  category: CommandCategory
-  keywords: string[]  // for fuzzy matching
-  icon: string        // single glyph / emoji kept monochrome by CSS
+  icon: string
+  category: 'module' | 'action' | 'type' | 'filter'
+  keywords: string[]
+  // What gets dispatched when selected
+  action: 'module' | 'home' | 'export' | 'search' | 'forceType'
+  payload?: string   // module name, type override, etc.
 }
 
 export const PALETTE_COMMANDS: PaletteCommand[] = [
-  // ── Modules ─────────────────────────────────────────────────────
+  // ── Modules ──────────────────────────────────────────────────────
   {
-    id: 'open:journal',
+    id: 'journal',
     label: 'journal',
-    hint: 'open journal view',
+    hint: 'view journal entries',
+    icon: '📓',
     category: 'module',
-    keywords: ['journal', 'diary', 'entries', 'log', 'jou'],
-    icon: '▤',
+    keywords: ['journal', 'diary', 'entries', 'log', 'j'],
+    action: 'module',
+    payload: 'journal',
   },
   {
-    id: 'open:gallery',
+    id: 'gallery',
     label: 'gallery',
-    hint: 'open image gallery',
+    hint: 'browse saved images',
+    icon: '🖼',
     category: 'module',
-    keywords: ['gallery', 'images', 'photos', 'pics', 'gal'],
-    icon: '▦',
+    keywords: ['gallery', 'photos', 'images', 'pics', 'pictures', 'g'],
+    action: 'module',
+    payload: 'gallery',
   },
   {
-    id: 'open:links',
+    id: 'links',
     label: 'links',
-    hint: 'open saved links',
+    hint: 'saved bookmarks & URLs',
+    icon: '🔗',
     category: 'module',
-    keywords: ['links', 'bookmarks', 'urls', 'web', 'lin'],
-    icon: '⌁',
+    keywords: ['links', 'bookmarks', 'urls', 'saved', 'web', 'l'],
+    action: 'module',
+    payload: 'links',
   },
   {
-    id: 'open:todo',
+    id: 'todo',
     label: 'todo',
-    hint: 'open task list',
+    hint: 'manage tasks & checklists',
+    icon: '✓',
     category: 'module',
-    keywords: ['todo', 'tasks', 'checklist', 'list', 'tod'],
-    icon: '☐',
-  },
-
-  // ── Note type overrides ──────────────────────────────────────────
-  {
-    id: 'as:journal',
-    label: 'save as journal',
-    hint: 'force journal type on next note',
-    category: 'type',
-    keywords: ['journal', 'as journal', 'force journal', 'long'],
-    icon: '◈',
-  },
-  {
-    id: 'as:link',
-    label: 'save as link',
-    hint: 'force link type on next note',
-    category: 'type',
-    keywords: ['link', 'as link', 'bookmark', 'url'],
-    icon: '◈',
-  },
-  {
-    id: 'as:text',
-    label: 'save as text',
-    hint: 'force plain text on next note',
-    category: 'type',
-    keywords: ['text', 'plain', 'as text'],
-    icon: '◈',
+    keywords: ['todo', 'todos', 'task', 'tasks', 'list', 'checklist', 'check', 't'],
+    action: 'module',
+    payload: 'todo',
   },
 
   // ── Actions ──────────────────────────────────────────────────────
   {
-    id: 'action:home',
+    id: 'home',
     label: 'home',
-    hint: 'close any open module',
-    category: 'action',
-    keywords: ['home', 'close', 'back', 'exit', 'main'],
+    hint: 'close module / go home',
     icon: '⌂',
+    category: 'action',
+    keywords: ['home', 'back', 'exit', 'close', 'menu', 'h'],
+    action: 'home',
   },
   {
-    id: 'action:export',
-    label: 'export notes',
-    hint: 'download all notes as JSON',
-    category: 'action',
-    keywords: ['export', 'download', 'backup', 'json'],
+    id: 'export',
+    label: 'export',
+    hint: 'download notes as JSON',
     icon: '↓',
+    category: 'action',
+    keywords: ['export', 'download', 'backup', 'save'],
+    action: 'export',
   },
 ]
 
-// ─── Fuzzy match ────────────────────────────────────────────────────
-// Returns commands ranked by match quality against `query`.
+// ── Fuzzy scorer ─────────────────────────────────────────────────
+
+function scoreCommand(cmd: PaletteCommand, q: string): number {
+  if (cmd.label === q)                            return 100
+  if (cmd.label.startsWith(q))                   return 80
+  if (cmd.keywords.some((kw) => kw.startsWith(q))) return 60
+  if (cmd.label.includes(q))                     return 40
+  if (cmd.keywords.some((kw) => kw.includes(q))) return 20
+  if (cmd.hint.includes(q))                      return 10
+  return 0
+}
+
 export function filterCommands(query: string): PaletteCommand[] {
   const q = query.toLowerCase().trim()
   if (!q) return PALETTE_COMMANDS
@@ -104,20 +95,4 @@ export function filterCommands(query: string): PaletteCommand[] {
     .filter(({ score }) => score > 0)
     .sort((a, b) => b.score - a.score)
     .map(({ cmd }) => cmd)
-}
-
-function scoreCommand(cmd: PaletteCommand, q: string): number {
-  // Exact label match
-  if (cmd.label === q) return 100
-  // Label starts with query
-  if (cmd.label.startsWith(q)) return 80
-  // Any keyword starts with query
-  if (cmd.keywords.some((kw) => kw.startsWith(q))) return 60
-  // Label contains query
-  if (cmd.label.includes(q)) return 40
-  // Any keyword contains query
-  if (cmd.keywords.some((kw) => kw.includes(q))) return 20
-  // Hint contains query
-  if (cmd.hint.includes(q)) return 10
-  return 0
 }

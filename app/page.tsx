@@ -197,7 +197,7 @@ export default function Home() {
       )}
 
       <div className="feed-area" style={activeModule ? { display: 'none' } : undefined}>
-        <NotesFeed notes={notes} onDelete={handleDelete} />
+        <NotesFeed notes={notes} onDelete={handleDelete} activeModule={activeModule} />
       </div>
 
       <div className="input-area">

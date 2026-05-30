@@ -74,10 +74,10 @@ export function NotesFeed({ notes, onDelete, activeModule }: NotesFeedProps) {
 
   if (filtered.length === 0) {
     return (
-      <div className="feed-empty">
-        <p>Nothing here yet.</p>
-      </div>
-    )
+  <div className="feed-empty">
+    <p>Nothing saved yet.<br />Start typing below.</p>
+  </div>
+)
   }
 
   return (

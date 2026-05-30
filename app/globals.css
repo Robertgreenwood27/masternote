@@ -1205,3 +1205,52 @@ html, body {
   background: var(--bg);
   border-top: 1px solid var(--border);
 }
+
+/* Replace the existing .input-area rule */
+.input-area {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  padding: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--bg);
+}
+
+/* Replace .status-bar */
+.status-bar {
+  padding: 4px 1.25rem;
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  overflow: hidden;          /* prevent overflow */
+  flex-wrap: nowrap;
+  padding-top: env(safe-area-inset-top, 4px); /* respect notch on edge cases */
+}
+
+/* Replace .status-guest-hint */
+.status-guest-hint {
+  margin-left: auto;
+  font-size: 0.65rem;
+  opacity: 0.35;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;              /* allows flexbox shrink */
+}
+
+/* Also update .feed-empty to center vertically and not waste space */
+.feed-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 2rem;        /* was 4rem — tighter on mobile */
+  color: var(--text-dim);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  height: 100%;
+  text-align: center;
+}

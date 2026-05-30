@@ -5,6 +5,7 @@ import { Note } from '@/types'
 interface NotesFeedProps {
   notes: Note[]
   onDelete?: (id: string, note: Note) => void
+  activeModule: string | null
 }
 
 function NoteCard({ note, onDelete }: { note: Note; onDelete?: (id: string, note: Note) => void }) {
@@ -44,18 +45,44 @@ function NoteCard({ note, onDelete }: { note: Note; onDelete?: (id: string, note
   )
 }
 
-export function NotesFeed({ notes, onDelete }: NotesFeedProps) {
-  if (notes.length === 0) {
+const MODULE_TYPE_MAP: Record<string, string[]> = {
+  journal: ['journal'],
+  gallery: ['image'],
+  links: ['link'],
+  // 'all' and 'todo' intentionally omitted — all shows everything, todo has no notes
+}
+
+export function NotesFeed({ notes, onDelete, activeModule }: NotesFeedProps) {
+  // Blank slate at home
+  if (!activeModule) {
     return (
       <div className="feed-empty">
-        <p>Nothing saved yet. Start typing.</p>
+        <p>type <kbd>/journal</kbd>, <kbd>/gallery</kbd>, <kbd>/links</kbd>, or <kbd>/todo</kbd> — or <kbd>*</kbd> for everything</p>
+      </div>
+    )
+  }
+
+  // todo module has no notes feed
+  if (activeModule === 'todo') {
+    return null
+  }
+
+  const allowedTypes = MODULE_TYPE_MAP[activeModule]
+  const filtered = allowedTypes
+    ? notes.filter((n) => allowedTypes.includes(n.type))
+    : notes // 'all' falls here — no filter
+
+  if (filtered.length === 0) {
+    return (
+      <div className="feed-empty">
+        <p>Nothing here yet.</p>
       </div>
     )
   }
 
   return (
     <div className="notes-feed">
-      {notes.map((note) => (
+      {filtered.map((note) => (
         <NoteCard key={note.id} note={note} onDelete={onDelete} />
       ))}
     </div>

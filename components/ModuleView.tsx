@@ -2,24 +2,20 @@
 
 import { findModule } from './CommandParser'
 import { Note } from '@/types'
-import { makeSearchModule } from '@/modules/search'
 
 interface ModuleViewProps {
   activeModule: string | null
   notes: Note[]
   onClose: () => void
-  searchQuery?: string
 }
 
-export function ModuleView({ activeModule, notes, onClose, searchQuery }: ModuleViewProps) {
+export function ModuleView({ activeModule, notes, onClose }: ModuleViewProps) {
   if (!activeModule) return null
 
-  // For search, build a dynamic module with the current query baked in
-  const mod =
-    activeModule === 'search'
-      ? makeSearchModule(searchQuery)
-      : findModule(activeModule)
+  // 'all' has no module surface — it just reveals the feed below
+  if (activeModule === 'all') return null
 
+  const mod = findModule(activeModule)
   if (!mod) return null
 
   const { Component } = mod

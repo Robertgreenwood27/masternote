@@ -15,11 +15,8 @@ export function detectNoteType(input: string): NoteType {
     // not a URL
   }
 
-  if (trimmed.includes('\n') || trimmed.length > 280) {
-    return 'journal'
-  }
-
-  return 'text'
+  // Everything that isn't a URL or image is a journal entry
+  return 'journal'
 }
 
 export async function uploadImage(file: File): Promise<string | null> {

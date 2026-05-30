@@ -110,3 +110,23 @@ create policy "Users delete images"
 -- select table_name, column_name, column_default
 -- from information_schema.columns
 -- where table_name in ('notes', 'todos') and column_name = 'user_id';
+
+-- ════════════════════════════════════════════════════════════════════
+-- masternote — migrate 'text' note type → 'journal'
+-- Run in Supabase: Database › SQL Editor › New query › Run
+-- ════════════════════════════════════════════════════════════════════
+
+-- 1. Update any existing 'text' notes to 'journal'
+update notes set type = 'journal' where type = 'text';
+
+-- 2. Drop the old check constraint (name may vary; find yours with the query below)
+--    SELECT constraint_name FROM information_schema.table_constraints
+--    WHERE table_name = 'notes' AND constraint_type = 'CHECK';
+--
+-- Then replace 'notes_type_check' with your actual constraint name:
+alter table notes drop constraint if exists notes_type_check;
+
+-- 3. Add the new constraint without 'text'
+alter table notes
+  add constraint notes_type_check
+  check (type in ('journal', 'image', 'link'));

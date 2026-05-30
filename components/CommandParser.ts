@@ -15,29 +15,27 @@ function matchesKeyword(word: string, keywords: string[]): boolean {
 export function parseCommand(input: string): ParsedCommand {
   const trimmed = input.trim()
 
+  // * alone → show everything
+  if (trimmed === '*') {
+    return { isCommand: true, moduleName: 'all', rawInput: trimmed }
+  }
+
   // Commands MUST start with "/". Anything else is always a note.
   if (!trimmed.startsWith('/')) {
     return { isCommand: false, rawInput: trimmed, noteContent: trimmed }
   }
 
-  // Strip the slash, split into parts
-  const parts = trimmed.slice(1).trim().split(/\s+/)
-  const word = parts[0].toLowerCase()
+  // Strip the slash, take the first word (ignore anything after a space)
+  const word = trimmed.slice(1).trim().toLowerCase().split(/\s+/)[0]
 
   // "/" alone, or /home /back /exit /close /menu → close any open module
   if (word === '' || matchesKeyword(word, HOME_KEYWORDS)) {
     return { isCommand: true, action: 'home', rawInput: trimmed }
   }
 
-  // /search <query> → open search module with results
-  if (matchesKeyword(word, ['search', 'find', 'query', 'lookup'])) {
-    const query = parts.slice(1).join(' ').trim()
-    return {
-      isCommand: true,
-      action: 'search',
-      searchQuery: query,
-      rawInput: trimmed,
-    }
+  // /all → show everything
+  if (word === 'all' || word === 'al') {
+    return { isCommand: true, moduleName: 'all', rawInput: trimmed }
   }
 
   // /journal /gallery /links /todo (or shorthand) → open that module

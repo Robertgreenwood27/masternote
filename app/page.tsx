@@ -14,71 +14,79 @@ import {
   clearLocalNotes,
 } from '@/lib/localNotes'
 import { onAuthChange, User } from '@/lib/auth'
-import { Note, NoteType } from '@/types'
+import { Note } from '@/types'
 
 export default function Home() {
   const [notes, setNotes] = useState<Note[]>([])
   const [activeModule, setActiveModule] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState<string | undefined>(undefined)
   const [isLoading, setIsLoading] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [authReady, setAuthReady] = useState(false)
 
+  // Subscribe to auth changes
   useEffect(() => {
     const unsub = onAuthChange(async (u) => {
       setUser(u)
       setAuthReady(true)
+
       if (u) {
+        // Signed in — load from DB
         const dbNotes = await getNotes()
         setNotes(dbNotes)
       } else {
+        // Guest — load from localStorage
         setNotes(getLocalNotes())
       }
     })
+
     return unsub
   }, [])
 
+  // Escape closes the active module from anywhere
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && activeModule) {
         setActiveModule(null)
-        setSearchQuery(undefined)
       }
     }
+
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+
+    return () => {
+      window.removeEventListener('keydown', onKey)
+    }
   }, [activeModule])
 
+  // Migrate guest notes into DB after sign-in
   const handleMigrateGuest = useCallback(async () => {
     const local = getLocalNotes()
     if (local.length === 0) return
+
+    // Push each local note to DB, oldest first so feed order is preserved
     const toMigrate = [...local].reverse()
+
     for (const n of toMigrate) {
       await saveNote(n.content, n.type, n.metadata)
     }
+
     clearLocalNotes()
+
     const dbNotes = await getNotes()
     setNotes(dbNotes)
   }, [])
 
-  const handleSubmit = useCallback(async (input: string, forceType?: 'journal') => {
+  const handleSubmit = useCallback(async (input: string) => {
     const trimmed = input.trim()
     if (!trimmed) return
 
     const command = parseCommand(trimmed)
-
     if (command.isCommand) {
       if (command.action === 'home') {
         setActiveModule(null)
-        setSearchQuery(undefined)
-      } else if (command.action === 'search') {
-        setSearchQuery(command.searchQuery)
-        setActiveModule('search')
       } else if (command.moduleName) {
         setActiveModule((prev) =>
           prev === command.moduleName ? null : command.moduleName!
         )
-        setSearchQuery(undefined)
       }
       return
     }
@@ -86,10 +94,12 @@ export default function Home() {
     setIsLoading(true)
 
     if (user) {
-      const saved = await saveNote(trimmed, forceType)
-      if (saved) setNotes((prev) => [saved, ...prev])
+      const saved = await saveNote(trimmed)
+      if (saved) {
+        setNotes((prev) => [saved, ...prev])
+      }
     } else {
-      const saved = saveLocalNote(trimmed, forceType)
+      const saved = saveLocalNote(trimmed)
       setNotes((prev) => [saved, ...prev])
     }
 
@@ -98,24 +108,34 @@ export default function Home() {
 
   const handleImagePaste = useCallback(async (file: File) => {
     setIsLoading(true)
+
     if (user) {
       const url = await uploadImage(file)
+
       if (url) {
         const saved = await saveNote(url, 'image')
-        if (saved) setNotes((prev) => [saved, ...prev])
+
+        if (saved) {
+          setNotes((prev) => [saved, ...prev])
+        }
       }
     } else {
+      // For guests, store a local object URL. This is ephemeral, which is fine for guest mode.
       const url = URL.createObjectURL(file)
       const saved = saveLocalNote(url, 'image')
       setNotes((prev) => [saved, ...prev])
     }
+
     setIsLoading(false)
   }, [user])
 
   const handleDelete = useCallback(async (id: string, note: Note) => {
     if (user) {
       const ok = await deleteNote(id, note)
-      if (ok) setNotes((prev) => prev.filter((n) => n.id !== id))
+
+      if (ok) {
+        setNotes((prev) => prev.filter((n) => n.id !== id))
+      }
     } else {
       deleteLocalNote(id)
       setNotes((prev) => prev.filter((n) => n.id !== id))
@@ -128,18 +148,18 @@ export default function Home() {
     <main className="page">
       <div className="status-bar">
         <AuthPopover user={user} onMigrateGuest={handleMigrateGuest} />
+
         <span className="status-app-name">masternote</span>
+
         {activeModule && (
           <>
             <span>›</span>
-            <span className="status-crumb">
-              {activeModule === 'search' && searchQuery
-                ? `search: ${searchQuery}`
-                : activeModule}
-            </span>
+            <span className="status-crumb">{activeModule}</span>
           </>
         )}
+
         {isLoading && <span className="status-loading">saving…</span>}
+
         {!user && (
           <span className="status-guest-hint">
             notes are local until you sign in
@@ -151,16 +171,16 @@ export default function Home() {
         <ModuleView
           activeModule={activeModule}
           notes={notes}
-          searchQuery={searchQuery}
-          onClose={() => {
-            setActiveModule(null)
-            setSearchQuery(undefined)
-          }}
+          onClose={() => setActiveModule(null)}
         />
       )}
 
       <div className="feed-area">
-        <NotesFeed notes={notes} onDelete={handleDelete} />
+        <NotesFeed
+          notes={notes}
+          onDelete={handleDelete}
+          activeModule={activeModule}
+        />
       </div>
 
       <div className="input-area">

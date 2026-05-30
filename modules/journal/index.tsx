@@ -14,8 +14,8 @@ function JournalComponent({ notes, onClose }: ModuleProps) {
       <h2 className="module-title">Journal</h2>
       {journalNotes.length === 0 ? (
         <p className="module-empty">
-          No journal entries yet. Type a thought and press{' '}
-          <kbd>Shift+Enter</kbd> to save as journal.
+          No journal entries yet. Write below and press{' '}
+          <kbd>Ctrl+Shift+↵</kbd> to save as a journal entry.
         </p>
       ) : (
         <div className="journal-entries">

@@ -3,6 +3,7 @@ import { JournalModule } from './journal'
 import { GalleryModule } from './gallery'
 import { LinksModule } from './links'
 import { TodoModule } from './todo'
+import { SearchModule } from './search'
 
 /**
  * MODULE REGISTRY
@@ -20,6 +21,7 @@ export const MODULES: MasterModule[] = [
   GalleryModule,
   LinksModule,
   TodoModule,
+  SearchModule,
 ]
 
 export type { MasterModule }

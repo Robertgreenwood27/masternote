@@ -842,3 +842,70 @@ html, body {
 .todo-delete:hover {
   color: var(--danger);
 }
+
+/* ─── Search Module ─── */
+/* Append these rules to globals.css */
+
+.search-module .module-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.search-query-label {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  opacity: 0.85;
+}
+
+.search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.search-result-item {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.search-result-item:hover {
+  border-color: var(--border);
+}
+
+.search-result-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+/* Kind badges */
+.search-kind-note  { color: var(--accent);  border-color: var(--accent-dim); }
+.search-kind-todo  { color: #7a9a6a;        border-color: #243020; }
+.search-kind-done  { color: var(--text-dim); border-color: var(--border); }
+
+.search-result-text {
+  color: var(--text);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+}
+
+/* Highlighted match */
+.search-highlight {
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+  color: var(--text-bright);
+  border-radius: 2px;
+  padding: 0 2px;
+  /* override browser default */
+  font-style: normal;
+}

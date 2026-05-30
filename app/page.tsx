@@ -170,12 +170,11 @@ export default function Home() {
 
       <div className="input-area">
         <NoteInput
-          onSubmit={handleSubmit}
-          onImagePaste={handleImagePaste}
-          isLoading={isLoading}
-          activeModule={activeModule}
-          notes={notes}
-        />
+  onSubmit={handleSubmit}
+  onImagePaste={handleImagePaste}
+  isLoading={isLoading}
+  activeModule={activeModule}
+/>
       </div>
     </main>
   )

@@ -16,35 +16,40 @@ function LinksComponent({ notes, onClose }: ModuleProps) {
 
       {linkNotes.length === 0 ? (
         <p className="module-empty">
-          No links saved yet. Paste a URL into the input to bookmark it.
+          No links saved yet. Paste a URL — or try{' '}
+          <kbd>https://example.com as myname</kbd> to give it a handle.
         </p>
       ) : (
         <div className="links-list">
-          {linkNotes.map((note: Note) => (
-            <a
-              key={note.id}
-              href={note.content}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="link-item"
-            >
-              <span className="link-domain">
-                {new URL(note.content).hostname}
-              </span>
-
-              {note.metadata?.handle && (
-                <span className="link-handle">
-                  /{note.metadata.handle as string}
+          {linkNotes.map((note: Note) => {
+            const handle = note.metadata?.handle as string | undefined
+            return (
+              <a
+                key={note.id}
+                href={note.content}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link-item"
+              >
+                <span className="link-domain">
+                  {new URL(note.content).hostname}
                 </span>
-              )}
 
-              <span className="link-url">{note.content}</span>
+                <span className="link-url">{note.content}</span>
 
-              <span className="link-date">
-                {new Date(note.created_at).toLocaleDateString()}
-              </span>
-            </a>
-          ))}
+                <span className="link-item-right">
+                  {handle && (
+                    <span className="link-handle" title={`/open ${handle}`}>
+                      /{handle}
+                    </span>
+                  )}
+                  <span className="link-date">
+                    {new Date(note.created_at).toLocaleDateString()}
+                  </span>
+                </span>
+              </a>
+            )
+          })}
         </div>
       )}
     </div>

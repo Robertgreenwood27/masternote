@@ -118,13 +118,12 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: N
 
       {/* Hidden file input — accepts images, opens camera on mobile */}
       <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        style={{ display: 'none' }}
-        onChange={handleFileChange}
-      />
+  ref={fileInputRef}
+  type="file"
+  accept="image/*"
+  style={{ display: 'none' }}
+  onChange={handleFileChange}
+/>
 
       <div className={`note-input-container${isMobile ? ' note-input-container--mobile' : ''}`}>
         {/* Mobile-only: add image / camera button */}

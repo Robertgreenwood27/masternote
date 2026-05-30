@@ -156,14 +156,14 @@ export default function Home() {
         )}
       </div>
 
-      {activeModule && (
-        <ModuleView
-  activeModule={activeModule}
-  notes={notes}
-  onClose={() => setActiveModule(null)}
-  onDelete={handleDelete}
-/>
-      )}
+     {activeModule && (
+  <ModuleView
+    activeModule={activeModule}
+    notes={notes}
+    onClose={() => setActiveModule(null)}
+    onDelete={handleDelete}   // ← add this
+  />
+)}
 
       <div className="feed-area" style={activeModule ? { display: 'none' } : undefined}>
   <NotesFeed notes={notes} onDelete={handleDelete} />

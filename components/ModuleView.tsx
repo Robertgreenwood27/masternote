@@ -7,16 +7,15 @@ interface ModuleViewProps {
   activeModule: string | null
   notes: Note[]
   onClose: () => void
-  onDelete?: (id: string, note: Note) => void
+  onDelete?: (id: string, note: Note) => void   // ← add this
 }
-
-
-const FULL_HEIGHT_MODULES = ['gallery']
 
 export function ModuleView({ activeModule, notes, onClose, onDelete }: ModuleViewProps) {
   if (!activeModule) return null
+
   const mod = findModule(activeModule)
   if (!mod) return null
+
   const { Component } = mod
 
   return (

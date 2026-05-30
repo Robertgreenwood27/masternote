@@ -13,5 +13,5 @@ export interface ModuleProps {
   notes: Note[]
   onClose: () => void
   isActive: boolean
-  onDelete?: (id: string, note: Note) => void
+  onDelete?: (id: string, note: Note) => void   // ← add this
 }

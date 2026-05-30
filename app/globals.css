@@ -1345,3 +1345,39 @@ html, body {
 
 /* ─── Image Paste Preview ─── */
 /* ... rest unchanged ... */
+
+/* ─── Attach button (mobile image picker) ─── */
+
+.note-attach {
+  align-self: stretch;
+  background: none;
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 20px;
+  width: 40px;
+  cursor: pointer;
+  transition: color 0.15s;
+  display: none; /* hidden by default on desktop */
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.note-attach:hover:not(:disabled) {
+  color: var(--text-bright);
+}
+
+.note-attach:disabled {
+  opacity: 0.2;
+  cursor: default;
+}
+
+/* Show on touch devices / narrow screens */
+@media (hover: none), (max-width: 640px) {
+  .note-attach {
+    display: flex;
+  }
+}

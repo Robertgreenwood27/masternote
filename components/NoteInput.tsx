@@ -15,10 +15,10 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: N
   const [pastePreview, setPastePreview] = useState<string | null>(null)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const charCount = value.length
-  const charClass =
-    charCount > 240 ? 'danger' : charCount > 180 ? 'warn' : ''
+  const charClass = charCount > 240 ? 'danger' : charCount > 180 ? 'warn' : ''
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -34,9 +34,7 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: N
       if (value.trim() && !isLoading) {
         onSubmit(value)
         setValue('')
-        if (textareaRef.current) {
-          textareaRef.current.style.height = 'auto'
-        }
+        if (textareaRef.current) textareaRef.current.style.height = 'auto'
       }
     }
 
@@ -61,12 +59,23 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: N
       e.preventDefault()
       const file = imageItem.getAsFile()
       if (!file) return
-
-      setPendingFile(file)
-      const reader = new FileReader()
-      reader.onload = (ev) => setPastePreview(ev.target?.result as string)
-      reader.readAsDataURL(file)
+      stagePendingFile(file)
     }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    stagePendingFile(file)
+    // reset so the same file can be re-selected if cancelled
+    e.target.value = ''
+  }
+
+  const stagePendingFile = (file: File) => {
+    setPendingFile(file)
+    const reader = new FileReader()
+    reader.onload = (ev) => setPastePreview(ev.target?.result as string)
+    reader.readAsDataURL(file)
   }
 
   const cancelPaste = () => {
@@ -85,9 +94,7 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: N
     if (value.trim() && !isLoading) {
       onSubmit(value)
       setValue('')
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto'
-      }
+      if (textareaRef.current) textareaRef.current.style.height = 'auto'
     }
   }
 
@@ -110,6 +117,27 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule }: N
       )}
 
       <div className={`note-input-container${focused ? ' focused' : ''}`}>
+        {/* Hidden file input — triggered by the + button */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
+
+        {/* + button — visible on mobile, hidden on desktop */}
+        {onImagePaste && (
+          <button
+            className="note-attach"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={!!isLoading}
+            aria-label="Attach image"
+          >
+            +
+          </button>
+        )}
+
         <textarea
           ref={textareaRef}
           className="note-input"

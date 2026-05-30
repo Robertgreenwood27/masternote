@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 
@@ -12,6 +12,13 @@ export const metadata: Metadata = {
   description: 'your mind, on the page',
 }
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -22,10 +29,4 @@ export default function RootLayout({
       <body>{children}</body>
     </html>
   )
-}
-
-export const viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  viewportFit: 'cover',   // ← this is what unlocks env(safe-area-inset-*)
 }

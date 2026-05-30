@@ -179,17 +179,19 @@ export function NoteInput({ onSubmit, onImagePaste, isLoading, activeModule, not
 
       <div className="note-input-container">
         <textarea
-          ref={textareaRef}
-          className="note-input"
-          value={value}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onPaste={handlePaste}
-          placeholder={pendingFile ? '' : placeholder}
-          disabled={isLoading}
-          rows={1}
-          autoFocus
-        />
+  ref={textareaRef}
+  className="note-input"
+  value={value}
+  onChange={handleChange}
+  onKeyDown={handleKeyDown}
+  onPaste={handlePaste}
+  placeholder={pendingFile ? '' : placeholder}
+  disabled={isLoading}
+  rows={1}
+  autoFocus
+  // Prevent iOS auto-zoom (requires font-size ≥ 16px on the element itself)
+  style={{ fontSize: '16px' }}
+/>
         <button
           className="note-submit"
           onClick={() => {

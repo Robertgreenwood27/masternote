@@ -210,7 +210,7 @@ function GalleryCard({ notes, onClick }: { notes: Note[]; onClick: () => void })
 }
 
 function NoteCard({ notes, onClick }: { notes: Note[]; onClick: () => void }) {
-  const plain = notes.filter((n) => n.type === 'note' || n.type === 'text' || (!['journal','link','image'].includes(n.type)))[0]
+  const plain = notes.filter((n) => n.type === 'journal')[0]
   return (
     <div className="card" onClick={onClick}>
       <div className="card-header">
